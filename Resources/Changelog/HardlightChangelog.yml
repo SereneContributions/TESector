@@ -3521,3 +3521,106 @@ Entries:
       message: Return anaconda to the exped T2 loot table
   id: 376
   time: '2026-05-02T23:21:56.0000000+00:00'
+- author: re-silvered
+  changes:
+    - type: Add
+      message: Added even more vampirism.
+  id: 377
+  time: '2026-05-05T03:30:26.0000000+00:00'
+- author: Shades
+  changes:
+    - type: Fix
+      message: Fixed The Dark getting deleted.
+  id: 378
+  time: '2026-05-05T03:35:40.0000000+00:00'
+- author: re-silvered
+  changes:
+    - type: Remove
+      message: Removed pirate rules since we lack pirates
+  id: 379
+  time: '2026-05-05T03:39:51.0000000+00:00'
+- author: NotLivyathan
+  changes:
+    - type: Add
+      message: Computer consoles now dynamically blend edges when placed side-by-side.
+  id: 380
+  time: '2026-05-05T03:42:12.0000000+00:00'
+- author: Aureuix
+  changes:
+    - type: Add
+      message: Added an amputee trait. one for both arms
+  id: 381
+  time: '2026-05-05T05:16:21.0000000+00:00'
+- author: Shades
+  changes:
+    - type: Add
+      message: Added new Gaiters! (Look at WinterDrobe).
+    - type: Tweak
+      message: Replaced Old Wizden Gaiters with the new ones.
+    - type: Tweak
+      message: Update ClothWarps, they can now go in hands slots too.
+  id: 382
+  time: '2026-05-05T18:48:05.0000000+00:00'
+- author: Mysterious Bunnyfactor
+  changes:
+    - type: Add
+      message: Bunnysuits!
+  id: 383
+  time: '2026-05-05T18:48:31.0000000+00:00'
+- author: R3v3l4t1on
+  changes:
+    - type: Fix
+      message: Fixed invalid entries in cyborg guidebook
+  id: 384
+  time: '2026-05-05T18:50:31.0000000+00:00'
+- author: Illumos
+  changes:
+    - type: Add
+      message: Some hardsuits are now taser-immune.
+  id: 385
+  time: '2026-05-05T21:52:03.0000000+00:00'
+- author: R3v3l4t1on
+  changes:
+    - type: Fix
+      message: Knocks another test off the list of failing tests
+  id: 386
+  time: '2026-05-05T21:52:51.0000000+00:00'
+- author: Illumos
+  changes:
+    - type: Add
+      message: More lewd clothings~
+  id: 387
+  time: '2026-05-05T21:53:43.0000000+00:00'
+- author: NotLivyathan
+  changes:
+    - type: Fix
+      message: Fixed expedition disk printer sprite.
+  id: 388
+  time: '2026-05-05T21:55:09.0000000+00:00'
+- author: fenndragon
+  changes:
+    - type: Add
+      message: Added new vents to scheduler
+    - type: Add
+      message: Added nightmares
+    - type: Fix
+      message: Fixed meteors
+    - type: Fix
+      message: other general bugfixes
+  id: 389
+  time: '2026-05-05T22:29:15.0000000+00:00'
+- author: Fasuh
+  changes:
+    - type: Fix
+      message: Fixed Avali displacement maps.
+  id: 390
+  time: '2026-05-05T22:30:02.0000000+00:00'
+- author: Kronyxxx
+  changes:
+    - type: Fix
+      message: >-
+        Maps referencing HL-renamed prototypes (e.g. `_HL/colcomm.yml`) once
+        again load correctly. The HL prototype migration table is now honored at
+        map load time.
+  id: 391
+  time: '2026-05-06T02:41:00.0000000+00:00'

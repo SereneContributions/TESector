@@ -373,3 +373,9 @@
 
 - type: Tag
   id: Pouch
+
+- type: Tag
+  id: KnockdownImmune
+  
+- type: Tag
+  id: Bunnysuit
