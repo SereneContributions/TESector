@@ -69,7 +69,9 @@
           MailCarrier: [ 2, 2 ]
           SalvageQuadBorg: [ 3, 3 ]
           # Frontier (1)
-          Mercenary: [ 0, 40 ] # Freelancer
+          Contractor: [ -1, -1 ]
+          Pilot: [ 5, 5 ]
+          Mercenary: [ -1, -1 ]
           # Civilian (7)
           Lawyer: [ 1, 1 ]
           Passenger: [ -1, -1 ]
