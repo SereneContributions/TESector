@@ -748,20 +748,29 @@ public sealed class ShipyardGridSaveSystem : EntitySystem
             return true;
         if (_secretStashQuery.HasComp(uid) || _persistOnSaveQuery.HasComp(uid))
             return false; // preserve stash root outright
+
         var anchored = false;
+        var isInAFreezer = false;
         if (_transformQuery.TryComp(uid, out var xform))
+        {
             anchored = xform.Anchored;
+            isInAFreezer = _entityManager.HasComponent<AntiRottingContainerComponent>(xform.ParentUid);
+        }
+
         // Per updated requirements: anchored entities must never be deleted under any circumstance.
         if (anchored)
             return false;
-        // Remove entities with Food component, except paper.
-        if (TryComp<FoodComponent>(uid, out _) && !TryComp<PaperComponent>(uid, out _) && !TryComp<ClothingComponent>(uid, out _))
-            return true;
-        if (TryComp<BodyPartComponent>(uid, out _))
-            return true;
-        if (TryComp<PerishableComponent>(uid, out _))
-            return true;
-        if(TryComp<SpaceGarbageComponent>(uid, out _) && !TryComp<LightBulbComponent>(uid, out _) && !TryComp<ContrabandComponent>(uid, out _))
+        // Remove entities with Food/PerishableComponent/BodyPartComponent component(s) that are not in a freezer, except paper.
+        if (!isInAFreezer)
+        {
+            if (TryComp<FoodComponent>(uid, out _) && !TryComp<PaperComponent>(uid, out _) && !TryComp<ClothingComponent>(uid, out _))
+                return true;
+            if (TryComp<PerishableComponent>(uid, out _))
+                return true;
+            if (TryComp<BodyPartComponent>(uid, out _))
+                return true;
+        }
+        if(TryComp<SpaceGarbageComponent>(uid, out _) && !TryComp<LightBulbComponent>(uid, out _) && !TryComp<ContrabandComponent>(uid, out _) && !TryComp<FoodComponent>(uid, out _) && !TryComp<PerishableComponent>(uid, out _) && !TryComp<BodyPartComponent>(uid, out _))
             return true;
 
         return false;
