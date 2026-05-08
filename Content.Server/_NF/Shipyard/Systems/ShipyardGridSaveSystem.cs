@@ -21,6 +21,8 @@ using Content.Shared.Body.Part;
 using Content.Shared.Chemistry.Components;
 using Content.Shared.Chemistry.Components.SolutionManager;
 using Content.Shared.Chemistry.EntitySystems;
+using Content.Shared.Clothing.Components;
+using Content.Shared.Contraband;
 using Content.Shared.DeviceLinking;
 using Content.Shared.DeviceLinking.Components;
 using Content.Shared.Implants.Components; // HardLight
@@ -752,13 +754,13 @@ public sealed class ShipyardGridSaveSystem : EntitySystem
         if (anchored)
             return false;
         // Remove entities with Food component, except paper.
-        if (TryComp<FoodComponent>(uid, out _) && !TryComp<PaperComponent>(uid, out _))
+        if (TryComp<FoodComponent>(uid, out _) && !TryComp<PaperComponent>(uid, out _) && !TryComp<ClothingComponent>(uid, out _))
             return true;
         if (TryComp<BodyPartComponent>(uid, out _))
             return true;
         if (TryComp<PerishableComponent>(uid, out _))
             return true;
-        if(TryComp<SpaceGarbageComponent>(uid, out _) && !TryComp<LightBulbComponent>(uid, out _))
+        if(TryComp<SpaceGarbageComponent>(uid, out _) && !TryComp<LightBulbComponent>(uid, out _) && !TryComp<ContrabandComponent>(uid, out _))
             return true;
 
         return false;
