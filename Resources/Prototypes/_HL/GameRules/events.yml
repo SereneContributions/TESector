@@ -111,7 +111,18 @@
   id: BasicAntagEventsTable
   table: !type:AllSelector # we need to pass a list of rules, since rules have further restrictions to consider via StationEventComp
     children:
-    - id: CockroachMigration
+    - id: BluespaceVaultError
+    - id: BluespaceCacheError
+    - id: BluespaceSyndicateFTLInterception
+    - id: BluespaceBloodMoon
+    - id: BluespaceWizardFederationScout
+    - id: BluespaceDungeonSnow
+    - id: BluespaceDungeonScrap
+    - id: BluespaceDungeonCave
+    - id: BluespaceDungeonBasalt
+    - id: BluespaceDungeonChromite
+    - id: BluespaceVaultSmallError
+    - id: BluespaceSalvage
     #- id: ClosetSkeleton
     #- id: DragonSpawn
     #- id: RainbowDragonSpawn
