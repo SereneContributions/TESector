@@ -16,6 +16,7 @@ using Content.Shared._Common.Consent; // HardLight
 using Content.Shared._HL.Shipyard; // HardLight
 using Content.Shared._NF.Shipyard.Components;
 using Content.Shared._NF.Shipyard.Events;
+using Content.Shared._Shitmed.Cybernetics;
 using Content.Shared.Atmos.Rotting;
 using Content.Shared.Body.Part;
 using Content.Shared.Chemistry.Components;
@@ -767,7 +768,7 @@ public sealed class ShipyardGridSaveSystem : EntitySystem
                 return true;
             if (TryComp<PerishableComponent>(uid, out _))
                 return true;
-            if (TryComp<BodyPartComponent>(uid, out _))
+            if (TryComp<BodyPartComponent>(uid, out _) && !TryComp<CyberneticsComponent>(uid, out _))
                 return true;
         }
         if(TryComp<SpaceGarbageComponent>(uid, out _) && !TryComp<LightBulbComponent>(uid, out _) && !TryComp<ContrabandComponent>(uid, out _) && !TryComp<FoodComponent>(uid, out _) && !TryComp<PerishableComponent>(uid, out _) && !TryComp<BodyPartComponent>(uid, out _))
