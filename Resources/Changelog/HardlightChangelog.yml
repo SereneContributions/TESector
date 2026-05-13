@@ -3837,3 +3837,11 @@ Entries:
       message: Marriage Axe from Starlight
   id: 411
   time: '2026-05-13T06:58:04.0000000+00:00'
+- author: NotLivyathan
+  changes:
+    - type: Fix
+      message: >-
+        Wooden televisions should no longer incorrectly use modular console
+        sprites.
+  id: 412
+  time: '2026-05-13T09:16:55.0000000+00:00'
