@@ -1,4 +1,5 @@
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Content.Server.Popups;
 using Content.Server.Atmos.Piping.Components;
@@ -747,6 +748,9 @@ public sealed class ShipyardGridSaveSystem : EntitySystem
         // HardLight: Remove used disposable implanters
         if (IsSpentDisposableImplanter(uid))
             return true;
+        // Remove used disposable injectors
+        if (IsSpentDisposableInjector(uid))
+            return true;
         if (_secretStashQuery.HasComp(uid) || _persistOnSaveQuery.HasComp(uid))
             return false; // preserve stash root outright
 
@@ -771,7 +775,9 @@ public sealed class ShipyardGridSaveSystem : EntitySystem
             if (TryComp<BodyPartComponent>(uid, out _) && !TryComp<CyberneticsComponent>(uid, out _))
                 return true;
         }
-        if(TryComp<SpaceGarbageComponent>(uid, out _) && !TryComp<LightBulbComponent>(uid, out _) && !TryComp<ContrabandComponent>(uid, out _) && !TryComp<FoodComponent>(uid, out _) && !TryComp<PerishableComponent>(uid, out _) && !TryComp<BodyPartComponent>(uid, out _))
+        if(TryComp<SpaceGarbageComponent>(uid, out _) && !TryComp<LightBulbComponent>(uid, out _) && !TryComp<ContrabandComponent>(uid, out _)
+           && !TryComp<FoodComponent>(uid, out _) && !TryComp<PerishableComponent>(uid, out _) && !TryComp<BodyPartComponent>(uid, out _)
+           && !TryComp<HyposprayComponent>(uid, out _))
             return true;
 
         return false;
@@ -804,6 +810,28 @@ public sealed class ShipyardGridSaveSystem : EntitySystem
             return false;
 
         return implanter.ImplanterSlot.ContainerSlot?.ContainedEntity is not { Valid: true };
+    }
+    // Checks if the entity is an injector that is marked as inject-only and has no solution currently stored.
+    private bool IsSpentDisposableInjector(EntityUid uid)
+    {
+        if (!TryComp<HyposprayComponent>(uid, out var injector))
+            return false;
+
+        // Disposable injectors are marked inject-only.
+        if (!injector.InjectOnly)
+            return false;
+
+        if (TryComp<ContainerManagerComponent>(uid, out var containerManager))
+        {
+            foreach (var container in containerManager.Containers.Where(container => container.Key.EndsWith(injector.SolutionName)))
+            {
+                if (!TryComp<SolutionComponent>(container.Value.ContainedEntities[0], out var solution))
+                    continue;
+                if (solution.Solution.Volume <= 0)
+                    return true;
+            }
+        }
+        return false;
     }
 
     private bool IsNonPersistentShipSavePrototype(EntityUid uid)
