@@ -24,7 +24,7 @@ using Robust.Shared.Timing;
 namespace Content.Server._HL.Cleanup;
 
 /// <summary>
-/// Cleanup script that deletes all GRIDLESS entities if they aren't within 120m of a player. 
+/// Cleanup script that deletes all GRIDLESS entities if they aren't within 120m of a player.
 /// Also cleans up ghosts with no player attatched, and prevents orphan grids from being deleted if a player is on it
 /// </summary>
 public sealed class ServerCleanupSystem : EntitySystem
@@ -40,13 +40,7 @@ public sealed class ServerCleanupSystem : EntitySystem
     [Dependency] private readonly MobStateSystem _mobStateSystem = default!;
 
     private ISawmill _sawmill = default!;
-    private TimeSpan _nextGhostCleanup = TimeSpan.Zero;
     private TimeSpan _nextFloatingEntityCleanup = TimeSpan.Zero;
-
-    /// <summary>
-    /// How often to check for disconnected ghost players (default: 5 minutes).
-    /// </summary>
-    private static readonly TimeSpan GhostCleanupInterval = TimeSpan.FromMinutes(5);
 
     /// <summary>
     /// How often to check for floating entities not on grids (default: 60 seconds).
@@ -57,17 +51,6 @@ public sealed class ServerCleanupSystem : EntitySystem
     /// Minimum distance (in tiles) a player must be from a floating entity
     /// </summary>
     private const float FloatingEntitySafeRadius = 120f;
-
-    /// <summary>
-    /// How long a player must be disconnected before ghost cleanup
-    /// </summary>
-    private static readonly TimeSpan DisconnectGracePeriod = TimeSpan.FromMinutes(2);
-
-    /// <summary>
-    /// Maps player UserId to the time they were first detected as disconnected.
-    /// Used to enforce the grace period before cleanup.
-    /// </summary>
-    private readonly Dictionary<Guid, TimeSpan> _disconnectedPlayers = new();
 
     /// <summary>
     /// Reused per cleanup pass to avoid walking _playerManager.Sessions inside the per-entity loop
@@ -90,92 +73,10 @@ public sealed class ServerCleanupSystem : EntitySystem
 
         var curTime = _gameTiming.CurTime;
 
-        if (curTime >= _nextGhostCleanup)
-        {
-            _nextGhostCleanup = curTime + GhostCleanupInterval;
-            CleanupGhostPlayers();
-        }
-
         if (curTime >= _nextFloatingEntityCleanup)
         {
             _nextFloatingEntityCleanup = curTime + FloatingEntityCleanupInterval;
             CleanupFloatingEntities();
-        }
-    }
-
-    /// <summary>
-    /// Scans for player ghosts whose sessions have disconnected and sends them back to the lobby after a grace period.
-    /// </summary>
-    private void CleanupGhostPlayers()
-    {
-        var curTime = _gameTiming.CurTime;
-        var cleanedUp = 0;
-
-        var connectedUsers = new HashSet<Guid>();
-        foreach (var session in _playerManager.Sessions)
-        {
-            if (session.Status == SessionStatus.InGame || session.Status == SessionStatus.Connected)
-            {
-                connectedUsers.Add(session.UserId);
-            }
-        }
-        var query = EntityQueryEnumerator<MindContainerComponent, TransformComponent>();
-        var entitiesToClean = new List<(EntityUid Uid, MindContainerComponent Mind)>();
-
-        while (query.MoveNext(out var uid, out var mindContainer, out var xform))
-        {
-            if (EntityManager.IsQueuedForDeletion(uid) || !EntityManager.EntityExists(uid))
-                continue;
-
-            if (HasComp<GhostComponent>(uid))
-                continue;
-
-            if (!_mindSystem.TryGetMind(uid, out var mindId, out var mind))
-                continue;
-
-            if (mind.UserId == null)
-                continue;
-
-            var userId = mind.UserId.Value;
-
-            if (connectedUsers.Contains(userId))
-            {
-                _disconnectedPlayers.Remove(userId);
-                continue;
-            }
-
-            if (!_disconnectedPlayers.TryGetValue(userId, out var disconnectedSince))
-            {
-                _disconnectedPlayers[userId] = curTime;
-                continue;
-            }
-
-            if (curTime - disconnectedSince < DisconnectGracePeriod)
-                continue;
-
-            entitiesToClean.Add((uid, mindContainer));
-        }
-
-        foreach (var (uid, _) in entitiesToClean)
-        {
-            if (!EntityManager.EntityExists(uid))
-                continue;
-
-            if (_mindSystem.TryGetMind(uid, out var mindId, out var mind) && mind.UserId != null)
-            {
-                _disconnectedPlayers.Remove(mind.UserId.Value);
-
-                _sawmill.Info($"Cleaning up disconnected player entity {ToPrettyString(uid)} " +
-                              $"(user: {mind.UserId}, disconnected for >{DisconnectGracePeriod.TotalMinutes:F0}m)");
-            }
-			
-            QueueDel(uid);
-            cleanedUp++;
-        }
-
-        if (cleanedUp > 0)
-        {
-            _sawmill.Info($"Ghost player cleanup: sent {cleanedUp} disconnected player(s) back to lobby.");
         }
     }
 
@@ -230,7 +131,7 @@ public sealed class ServerCleanupSystem : EntitySystem
         {
             if (!EntityManager.EntityExists(uid) || EntityManager.IsQueuedForDeletion(uid))
                 continue;
-			
+
             if (xform.MapID == MapId.Nullspace)
                 continue;
 
@@ -251,7 +152,7 @@ public sealed class ServerCleanupSystem : EntitySystem
 
             if (IsAncestorOnGrid(xform))
                 continue;
-			
+
             var entityPos = _transformSystem.GetWorldPosition(xform);
             var entityMap = xform.MapID;
             var cx = (int)MathF.Floor(entityPos.X / FloatingEntitySafeRadius);
@@ -353,7 +254,7 @@ public sealed class ServerCleanupSystem : EntitySystem
 
     /// <summary>
     /// When a grid is about to be deleted (from orphaned grid cleanup, shipyard save/delete, or any other source), this handler checks for players on/inside the grid
-	
+
     private void OnGridTerminating(EntityUid gridUid, MapGridComponent grid, ref EntityTerminatingEvent args)
     {
         var rescued = 0;
@@ -398,7 +299,7 @@ public sealed class ServerCleanupSystem : EntitySystem
                 }
             }
         }
-		
+
         foreach (var playerUid in playersToRescue)
         {
             if (!EntityManager.EntityExists(playerUid))
