@@ -2035,7 +2035,7 @@ entities:
       rot: 3.141592653589793 rad
       pos: 0.5,10.5
       parent: 1
-- proto: ComputerTabletopBroken
+- proto: ComputerTabletopSalvageExpedition
   entities:
   - uid: 263
     components:

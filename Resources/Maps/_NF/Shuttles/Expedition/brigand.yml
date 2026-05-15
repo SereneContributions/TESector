@@ -2211,7 +2211,7 @@ entities:
     - type: Transform
       pos: 2.5,11.5
       parent: 1
-- proto: ComputerTabletopBroken
+- proto: ComputerTabletopSalvageExpedition
   entities:
   - uid: 257
     components:

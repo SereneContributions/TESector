@@ -4623,7 +4623,7 @@ entities:
     - type: Transform
       pos: -2.5,7.5
       parent: 1
-- proto: ComputerTabletopBroken
+- proto: ComputerTabletopSalvageExpedition
   entities:
   - uid: 619
     components:
