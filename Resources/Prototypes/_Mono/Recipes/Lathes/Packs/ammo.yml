@@ -162,6 +162,7 @@
   - AmmoBox12_gaugeIncendiary
   - AmmoBox12_gaugePractice
   - AmmoBox12_gaugeUranium
+  - AmmoBox12_gaugeFlare
   - Magazine45_ACPSubMachineGunTopMountedFMJ
   - Magazine45_ACPSubMachineGunTopMountedEmpty
   - Magazine9x19mmSubMachineGunTopMountedFMJ
@@ -230,7 +231,7 @@
   - Magazine8x65mmEmpty
   - Magazine762x54mmREmpty
   - Magazine762x51mmEmpty
-  - Magazine12_gaugeEmpty 
+  - Magazine12_gaugeEmpty
   - Magazine45_ACPSubMachineGunTopMountedEmpty
   - Magazine9x19mmSubMachineGunTopMountedEmpty
   - Magazine57x28mmSubMachineGunTopMountedEmpty
