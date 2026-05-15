@@ -148,7 +148,7 @@ public sealed class HLCCVars
     /// Starlight: Sends afk players to cryo.
     /// </summary>
     public static readonly CVarDef<bool> CryoTeleportation =
-        CVarDef.Create("game.cryo_teleportation", true, CVar.SERVERONLY);
+        CVarDef.Create("game.cryo_teleportation", false, CVar.SERVERONLY);
 
     // Stumble-on-missing-leg tuning. Live-editable via the `cvar` console
     // command; values <= 0 fall back to the per-component DataField default.
