@@ -11,6 +11,7 @@ using Content.Shared.Popups;
 using Content.Shared.Strip;
 using Content.Shared.Verbs;
 using Robust.Shared.Containers;
+using Robust.Shared.GameStates;
 using Robust.Shared.Network;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Serialization;
@@ -38,11 +39,14 @@ public sealed class ToggleableClothingSystem : EntitySystem
         base.Initialize();
 
         SubscribeLocalEvent<ToggleableClothingComponent, ComponentInit>(OnInit);
+        SubscribeLocalEvent<ToggleableClothingComponent, ComponentStartup>(OnStartup);
         SubscribeLocalEvent<ToggleableClothingComponent, MapInitEvent>(OnMapInit);
         SubscribeLocalEvent<ToggleableClothingComponent, ToggleClothingEvent>(OnToggleClothing);
         SubscribeLocalEvent<ToggleableClothingComponent, GetItemActionsEvent>(OnGetActions);
         SubscribeLocalEvent<ToggleableClothingComponent, ComponentRemove>(OnRemoveToggleable);
         SubscribeLocalEvent<ToggleableClothingComponent, GotUnequippedEvent>(OnToggleableUnequip);
+        SubscribeLocalEvent<ToggleableClothingComponent, ComponentGetState>(OnGetState);
+        SubscribeLocalEvent<ToggleableClothingComponent, ComponentHandleState>(OnHandleState);
 
         SubscribeLocalEvent<AttachedClothingComponent, InteractHandEvent>(OnInteractHand);
         SubscribeLocalEvent<AttachedClothingComponent, GotUnequippedEvent>(OnAttachedUnequip);
@@ -80,6 +84,121 @@ public sealed class ToggleableClothingSystem : EntitySystem
         // New marking mode: no additional configuration needed, markings are handled dynamically
 
         Dirty(uid, component);
+    }
+
+    private void OnStartup(EntityUid uid, ToggleableClothingComponent component, ComponentStartup args)
+    {
+        if (_netMan.IsClient)
+            return;
+
+        var dirty = RepairTrackedEntities(uid, component);
+        var originalAction = component.ActionEntity;
+
+        if (_actionContainer.EnsureAction(uid, ref component.ActionEntity, out var action, component.Action)
+            && component.ClothingPrototype != null)
+        {
+            _actionsSystem.SetEntityIcon(component.ActionEntity.Value, component.ClothingUid, action);
+        }
+
+        if (originalAction != component.ActionEntity)
+            dirty = true;
+
+        if (dirty)
+            Dirty(uid, component);
+    }
+
+    private void OnGetState(EntityUid uid, ToggleableClothingComponent component, ref ComponentGetState args)
+    {
+        EntityManager.TryGetNetEntity(component.ActionEntity, out NetEntity? actionEntity);
+        EntityManager.TryGetNetEntity(component.ClothingUid, out NetEntity? clothingUid);
+
+        args.State = new ToggleableClothingComponentState(
+            component.Action,
+            actionEntity,
+            component.MarkingPrototype,
+            component.ClothingPrototype,
+            component.MarkingsVisible,
+            component.Slot,
+            component.RequiredFlags,
+            component.ContainerId,
+            clothingUid,
+            component.StripDelay,
+            component.VerbText);
+    }
+
+    private void OnHandleState(EntityUid uid, ToggleableClothingComponent component, ref ComponentHandleState args)
+    {
+        if (args.Current is not ToggleableClothingComponentState state)
+            return;
+
+        component.Action = state.Action;
+        component.ActionEntity = state.ActionEntity is { } actionEntity && TryGetEntity(actionEntity, out var actionUid)
+            ? actionUid
+            : null;
+        component.MarkingPrototype = state.MarkingPrototype;
+        component.ClothingPrototype = state.ClothingPrototype;
+        component.MarkingsVisible = state.MarkingsVisible;
+        component.Slot = state.Slot;
+        component.RequiredFlags = state.RequiredFlags;
+        component.ContainerId = state.ContainerId;
+        component.ClothingUid = state.ClothingUid is { } clothingEntity && TryGetEntity(clothingEntity, out var clothingUid)
+            ? clothingUid
+            : null;
+        component.StripDelay = state.StripDelay;
+        component.VerbText = state.VerbText;
+    }
+
+    private bool RepairTrackedEntities(EntityUid uid, ToggleableClothingComponent component)
+    {
+        var dirty = false;
+
+        if (component.ClothingPrototype == null)
+        {
+            if (component.ClothingUid != null)
+            {
+                component.ClothingUid = null;
+                dirty = true;
+            }
+        }
+        else
+        {
+            EntityUid? clothingUid = null;
+
+            if (component.Container?.ContainedEntity is { } contained && HasLiveMetadata(contained))
+                clothingUid = contained;
+            else if (component.ClothingUid is { } tracked && HasLiveMetadata(tracked))
+                clothingUid = tracked;
+
+            if (component.ClothingUid != clothingUid)
+            {
+                component.ClothingUid = clothingUid;
+                dirty = true;
+            }
+
+            if (clothingUid is { } liveClothing)
+            {
+                var attached = EnsureComp<AttachedClothingComponent>(liveClothing);
+                if (attached.AttachedUid != uid)
+                {
+                    attached.AttachedUid = uid;
+                    Dirty(liveClothing, attached);
+                }
+            }
+        }
+
+        if (component.ActionEntity is { } actionUid && !HasLiveMetadata(actionUid))
+        {
+            component.ActionEntity = null;
+            dirty = true;
+        }
+
+        return dirty;
+    }
+
+    private bool HasLiveMetadata(EntityUid uid)
+    {
+        return TryComp(uid, out MetaDataComponent? meta)
+            && meta.EntityLifeStage < EntityLifeStage.Terminating;
     }
 
     /// <summary>
@@ -153,10 +272,13 @@ public sealed class ToggleableClothingSystem : EntitySystem
 
     private void OnGetVerbs(EntityUid uid, ToggleableClothingComponent component, GetVerbsEvent<EquipmentVerb> args)
     {
-        if (!args.CanAccess || !args.CanInteract || args.Hands == null || component.ClothingUid == null || component.Container == null)
+        if (!args.CanAccess || !args.CanInteract || args.Hands == null || component.ClothingUid is not { } clothingUid || component.Container == null || !HasLiveMetadata(clothingUid))
             return;
 
-        var text = component.VerbText ?? (component.ActionEntity == null ? null : Name(component.ActionEntity.Value));
+        var text = component.VerbText;
+        if (text == null && component.ActionEntity is { } actionUid && HasLiveMetadata(actionUid))
+            text = Name(actionUid);
+
         if (text == null)
             return;
 
@@ -216,7 +338,10 @@ public sealed class ToggleableClothingSystem : EntitySystem
     private void OnGetAttachedStripVerbsEvent(EntityUid uid, AttachedClothingComponent component, GetVerbsEvent<EquipmentVerb> args)
     {
         // redirect to the attached entity.
-        OnGetVerbs(component.AttachedUid, Comp<ToggleableClothingComponent>(component.AttachedUid), args);
+        if (!TryComp(component.AttachedUid, out ToggleableClothingComponent? toggleComp))
+            return;
+
+        OnGetVerbs(component.AttachedUid, toggleComp, args);
     }
 
     private void OnDoAfterComplete(EntityUid uid, ToggleableClothingComponent component, ToggleClothingDoAfterEvent args)
@@ -268,8 +393,8 @@ public sealed class ToggleableClothingSystem : EntitySystem
 
         _actionsSystem.RemoveAction(component.ActionEntity);
 
-        if (component.ClothingUid != null && !_netMan.IsClient)
-            QueueDel(component.ClothingUid.Value);
+        if (!_netMan.IsClient && component.ClothingUid is { } clothingUid && HasLiveMetadata(clothingUid))
+            QueueDel(clothingUid);
     }
 
     private void OnAttachedUnequipAttempt(EntityUid uid, AttachedClothingComponent component, BeingUnequippedAttemptEvent args)
@@ -353,7 +478,7 @@ public sealed class ToggleableClothingSystem : EntitySystem
         }
 
         // Legacy clothing mode
-        if (component.Container == null || component.ClothingUid == null)
+        if (component.Container == null || component.ClothingUid is not { } clothingUid || !HasLiveMetadata(clothingUid))
             return;
 
         if (component.Container.ContainedEntity == null)
@@ -364,7 +489,7 @@ public sealed class ToggleableClothingSystem : EntitySystem
                 user, user);
         }
         else
-            _inventorySystem.TryEquip(user, parent, component.ClothingUid.Value, component.Slot, triggerHandContact: true);
+            _inventorySystem.TryEquip(user, parent, clothingUid, component.Slot, triggerHandContact: true);
     }
 
     /// <summary>
@@ -423,7 +548,7 @@ public sealed class ToggleableClothingSystem : EntitySystem
 
     private void OnGetActions(EntityUid uid, ToggleableClothingComponent component, GetItemActionsEvent args)
     {
-        if (component.ActionEntity == null)
+        if (component.ActionEntity is not { } actionEntity || !HasLiveMetadata(actionEntity))
             return;
 
         // For marking mode: show action when item is equipped in its natural slot
@@ -432,13 +557,13 @@ public sealed class ToggleableClothingSystem : EntitySystem
             // Check if this item is equipped in any of its valid slots
             if ((args.SlotFlags & component.RequiredFlags) != 0)
             {
-                args.AddAction(component.ActionEntity.Value);
+                args.AddAction(actionEntity);
             }
         }
         // For legacy mode: show action only if clothing entity exists and slot requirements are fully met
-        else if (component.ClothingUid != null && (args.SlotFlags & component.RequiredFlags) == component.RequiredFlags)
+        else if (component.ClothingUid is { } clothingUid && HasLiveMetadata(clothingUid) && (args.SlotFlags & component.RequiredFlags) == component.RequiredFlags)
         {
-            args.AddAction(component.ActionEntity.Value);
+            args.AddAction(actionEntity);
         }
     }
 
