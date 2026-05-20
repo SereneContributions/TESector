@@ -4124,3 +4124,19 @@ Entries:
       message: Select species now have the ability to speak in their native tongue.
   id: 445
   time: '2026-05-20T08:35:53.0000000+00:00'
+- author: stickycheZ101
+  changes:
+    - type: Add
+      message: >-
+        added the nullspace detector, that detects nullspace users within a
+        short radius
+    - type: Add
+      message: >-
+        added the handheld bluespace flash, that stuns any nearby nullspace
+        users
+    - type: Add
+      message: >-
+        added the nullspace deterrence kit to the cargo market, that contains
+        basic nullspace detection and deterrence gear
+  id: 446
+  time: '2026-05-20T08:37:06.0000000+00:00'
