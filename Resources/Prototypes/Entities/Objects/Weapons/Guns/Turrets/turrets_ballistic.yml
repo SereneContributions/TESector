@@ -161,19 +161,19 @@
       map: ["enum.GunVisualLayers.Mag"]
       shader: unshaded
   - type: Gun
-    fireRate: 10
-    selectedMode: FullAuto
+    fireRate: 1
+    selectedMode: SemiAuto
     availableModes:
-    - FullAuto
-    soundGunshot: /Audio/Weapons/Guns/Gunshots/lasersight.ogg
-  - type: HitscanBatteryAmmoProvider
-    proto: lasersight # Frontier: use NF variant
-    fireCost: 1
+    - SemiAuto
+    soundGunshot: /Audio/Weapons/Guns/Gunshots/taser2.ogg
+  - type: ProjectileBatteryAmmoProvider
+    proto: BulletEnergyTurretDisabler # Frontier: use NF variant
+    fireCost: 100
   - type: PointLight
     enabled: true
     mask: /Textures/Effects/LightMasks/cone.png
     autoRot: true
-    radius: 10
+    radius: 12
     energy: 10
     netsync: false
   - type: Battery
