@@ -39,7 +39,6 @@ public sealed class ToggleableClothingSystem : EntitySystem
         base.Initialize();
 
         SubscribeLocalEvent<ToggleableClothingComponent, ComponentInit>(OnInit);
-        SubscribeLocalEvent<ToggleableClothingComponent, ComponentStartup>(OnStartup);
         SubscribeLocalEvent<ToggleableClothingComponent, MapInitEvent>(OnMapInit);
         SubscribeLocalEvent<ToggleableClothingComponent, ToggleClothingEvent>(OnToggleClothing);
         SubscribeLocalEvent<ToggleableClothingComponent, GetItemActionsEvent>(OnGetActions);
@@ -59,58 +58,10 @@ public sealed class ToggleableClothingSystem : EntitySystem
         SubscribeLocalEvent<ToggleableClothingComponent, ToggleClothingDoAfterEvent>(OnDoAfterComplete);
     }
 
-    /// <summary>
-    ///     Automatically configures the component based on the clothing prototype or marking prototype.
-    ///     For marking mode: Sets RequiredFlags based on this clothing's slots.
-    ///     For legacy clothing mode: Sets both RequiredFlags and target Slot.
-    /// </summary>
-    private void AutoConfigureToggleableClothing(EntityUid uid, ToggleableClothingComponent component)
-    {
-        // Get the clothing component of this item (the hardsuit/jumpsuit/etc)
-        if (TryComp<ClothingComponent>(uid, out var thisClothing))
-        {
-            component.RequiredFlags = thisClothing.Slots;
-        }
-
-        // Legacy mode: configure target slot based on spawned clothing entity
-        if (component.ClothingUid != null && component.ClothingPrototype != null)
-        {
-            // Get the clothing component of the target item (helmet/belt) to determine target slot
-            if (TryComp<ClothingComponent>(component.ClothingUid.Value, out var targetClothing))
-            {
-                component.Slot = GetSlotNameFromFlags(targetClothing.Slots);
-            }
-        }
-        // New marking mode: no additional configuration needed, markings are handled dynamically
-
-        Dirty(uid, component);
-    }
-
-    private void OnStartup(EntityUid uid, ToggleableClothingComponent component, ComponentStartup args)
-    {
-        if (_netMan.IsClient)
-            return;
-
-        var dirty = RepairTrackedEntities(uid, component);
-        var originalAction = component.ActionEntity;
-
-        if (_actionContainer.EnsureAction(uid, ref component.ActionEntity, out var action, component.Action)
-            && component.ClothingPrototype != null)
-        {
-            _actionsSystem.SetEntityIcon(component.ActionEntity.Value, component.ClothingUid, action);
-        }
-
-        if (originalAction != component.ActionEntity)
-            dirty = true;
-
-        if (dirty)
-            Dirty(uid, component);
-    }
-
     private void OnGetState(EntityUid uid, ToggleableClothingComponent component, ref ComponentGetState args)
     {
-        EntityManager.TryGetNetEntity(component.ActionEntity, out NetEntity? actionEntity);
-        EntityManager.TryGetNetEntity(component.ClothingUid, out NetEntity? clothingUid);
+        TryGetNetEntity(component.ActionEntity, out NetEntity? actionEntity);
+        TryGetNetEntity(component.ClothingUid, out NetEntity? clothingUid);
 
         args.State = new ToggleableClothingComponentState(
             component.Action,
@@ -148,57 +99,31 @@ public sealed class ToggleableClothingSystem : EntitySystem
         component.VerbText = state.VerbText;
     }
 
-    private bool RepairTrackedEntities(EntityUid uid, ToggleableClothingComponent component)
+    /// <summary>
+    ///     Automatically configures the component based on the clothing prototype or marking prototype.
+    ///     For marking mode: Sets RequiredFlags based on this clothing's slots.
+    ///     For legacy clothing mode: Sets both RequiredFlags and target Slot.
+    /// </summary>
+    private void AutoConfigureToggleableClothing(EntityUid uid, ToggleableClothingComponent component)
     {
-        var dirty = false;
-
-        if (component.ClothingPrototype == null)
+        // Get the clothing component of this item (the hardsuit/jumpsuit/etc)
+        if (TryComp<ClothingComponent>(uid, out var thisClothing))
         {
-            if (component.ClothingUid != null)
-            {
-                component.ClothingUid = null;
-                dirty = true;
-            }
-        }
-        else
-        {
-            EntityUid? clothingUid = null;
-
-            if (component.Container?.ContainedEntity is { } contained && HasLiveMetadata(contained))
-                clothingUid = contained;
-            else if (component.ClothingUid is { } tracked && HasLiveMetadata(tracked))
-                clothingUid = tracked;
-
-            if (component.ClothingUid != clothingUid)
-            {
-                component.ClothingUid = clothingUid;
-                dirty = true;
-            }
-
-            if (clothingUid is { } liveClothing)
-            {
-                var attached = EnsureComp<AttachedClothingComponent>(liveClothing);
-                if (attached.AttachedUid != uid)
-                {
-                    attached.AttachedUid = uid;
-                    Dirty(liveClothing, attached);
-                }
-            }
+            component.RequiredFlags = thisClothing.Slots;
         }
 
-        if (component.ActionEntity is { } actionUid && !HasLiveMetadata(actionUid))
+        // Legacy mode: configure target slot based on spawned clothing entity
+        if (component.ClothingUid != null && component.ClothingPrototype != null)
         {
-            component.ActionEntity = null;
-            dirty = true;
+            // Get the clothing component of the target item (helmet/belt) to determine target slot
+            if (TryComp<ClothingComponent>(component.ClothingUid.Value, out var targetClothing))
+            {
+                component.Slot = GetSlotNameFromFlags(targetClothing.Slots);
+            }
         }
+        // New marking mode: no additional configuration needed, markings are handled dynamically
 
-        return dirty;
-    }
-
-    private bool HasLiveMetadata(EntityUid uid)
-    {
-        return TryComp(uid, out MetaDataComponent? meta)
-            && meta.EntityLifeStage < EntityLifeStage.Terminating;
+        Dirty(uid, component);
     }
 
     /// <summary>
@@ -272,13 +197,10 @@ public sealed class ToggleableClothingSystem : EntitySystem
 
     private void OnGetVerbs(EntityUid uid, ToggleableClothingComponent component, GetVerbsEvent<EquipmentVerb> args)
     {
-        if (!args.CanAccess || !args.CanInteract || args.Hands == null || component.ClothingUid is not { } clothingUid || component.Container == null || !HasLiveMetadata(clothingUid))
+        if (!args.CanAccess || !args.CanInteract || args.Hands == null || component.ClothingUid == null || component.Container == null)
             return;
 
-        var text = component.VerbText;
-        if (text == null && component.ActionEntity is { } actionUid && HasLiveMetadata(actionUid))
-            text = Name(actionUid);
-
+        var text = component.VerbText ?? (component.ActionEntity == null ? null : Name(component.ActionEntity.Value));
         if (text == null)
             return;
 
@@ -338,10 +260,7 @@ public sealed class ToggleableClothingSystem : EntitySystem
     private void OnGetAttachedStripVerbsEvent(EntityUid uid, AttachedClothingComponent component, GetVerbsEvent<EquipmentVerb> args)
     {
         // redirect to the attached entity.
-        if (!TryComp(component.AttachedUid, out ToggleableClothingComponent? toggleComp))
-            return;
-
-        OnGetVerbs(component.AttachedUid, toggleComp, args);
+        OnGetVerbs(component.AttachedUid, Comp<ToggleableClothingComponent>(component.AttachedUid), args);
     }
 
     private void OnDoAfterComplete(EntityUid uid, ToggleableClothingComponent component, ToggleClothingDoAfterEvent args)
@@ -393,8 +312,8 @@ public sealed class ToggleableClothingSystem : EntitySystem
 
         _actionsSystem.RemoveAction(component.ActionEntity);
 
-        if (!_netMan.IsClient && component.ClothingUid is { } clothingUid && HasLiveMetadata(clothingUid))
-            QueueDel(clothingUid);
+        if (component.ClothingUid != null && !_netMan.IsClient)
+            QueueDel(component.ClothingUid.Value);
     }
 
     private void OnAttachedUnequipAttempt(EntityUid uid, AttachedClothingComponent component, BeingUnequippedAttemptEvent args)
@@ -478,7 +397,7 @@ public sealed class ToggleableClothingSystem : EntitySystem
         }
 
         // Legacy clothing mode
-        if (component.Container == null || component.ClothingUid is not { } clothingUid || !HasLiveMetadata(clothingUid))
+        if (component.Container == null || component.ClothingUid == null)
             return;
 
         if (component.Container.ContainedEntity == null)
@@ -489,7 +408,7 @@ public sealed class ToggleableClothingSystem : EntitySystem
                 user, user);
         }
         else
-            _inventorySystem.TryEquip(user, parent, clothingUid, component.Slot, triggerHandContact: true);
+            _inventorySystem.TryEquip(user, parent, component.ClothingUid.Value, component.Slot, triggerHandContact: true);
     }
 
     /// <summary>
@@ -548,7 +467,7 @@ public sealed class ToggleableClothingSystem : EntitySystem
 
     private void OnGetActions(EntityUid uid, ToggleableClothingComponent component, GetItemActionsEvent args)
     {
-        if (component.ActionEntity is not { } actionEntity || !HasLiveMetadata(actionEntity))
+        if (component.ActionEntity == null)
             return;
 
         // For marking mode: show action when item is equipped in its natural slot
@@ -557,13 +476,13 @@ public sealed class ToggleableClothingSystem : EntitySystem
             // Check if this item is equipped in any of its valid slots
             if ((args.SlotFlags & component.RequiredFlags) != 0)
             {
-                args.AddAction(actionEntity);
+                args.AddAction(component.ActionEntity.Value);
             }
         }
         // For legacy mode: show action only if clothing entity exists and slot requirements are fully met
-        else if (component.ClothingUid is { } clothingUid && HasLiveMetadata(clothingUid) && (args.SlotFlags & component.RequiredFlags) == component.RequiredFlags)
+        else if (component.ClothingUid != null && (args.SlotFlags & component.RequiredFlags) == component.RequiredFlags)
         {
-            args.AddAction(actionEntity);
+            args.AddAction(component.ActionEntity.Value);
         }
     }
 
