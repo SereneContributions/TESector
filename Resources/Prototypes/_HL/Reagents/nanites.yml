@@ -56,7 +56,6 @@
   flavor: metallic
   color: "#8afffd"
   recognizable: true
-  spoilsInto: InertNanites
   worksOnTheDead: true
   metabolisms:
     Medicine:
