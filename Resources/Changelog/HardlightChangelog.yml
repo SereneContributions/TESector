@@ -4248,3 +4248,9 @@ Entries:
       message: Snake eaten
   id: 460
   time: '2026-05-24T00:09:44.0000000+00:00'
+- author: IngvarJackal
+  changes:
+    - type: Add
+      message: Add suitstorage shortcut
+  id: 461
+  time: '2026-05-24T00:12:43.0000000+00:00'
