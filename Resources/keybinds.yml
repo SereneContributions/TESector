@@ -272,6 +272,10 @@ binds:
   type: State
   key: B
   mod1: Shift
+- function: SmartEquipSuitStorage
+  type: State
+  key: F
+  mod1: Shift
 - function: SmartEquipBelt
   type: State
   key: E

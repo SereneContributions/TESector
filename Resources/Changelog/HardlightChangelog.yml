@@ -4212,3 +4212,45 @@ Entries:
       message: Katana sheaths to MercVend.
   id: 455
   time: '2026-05-21T19:52:25.0000000+00:00'
+- author: SquishyEmmaaaa
+  changes:
+    - type: Add
+      message: New Colonial Officer's Sabre
+    - type: Add
+      message: New Ornate Sheath, with sprites!
+    - type: Tweak
+      message: Changed some CentCom contra tags to ColonialCommand ones.
+    - type: Tweak
+      message: Moves the medipen tag to the correct file location
+  id: 456
+  time: '2026-05-24T00:02:17.0000000+00:00'
+- author: NotLivyathan
+  changes:
+    - type: Remove
+      message: Livyathan was ejected. Livyathan was not The Imposter.
+  id: 457
+  time: '2026-05-24T00:03:33.0000000+00:00'
+- author: Typheus
+  changes: []
+  id: 458
+  time: '2026-05-24T00:03:59.0000000+00:00'
+- author: SquishyEmmaaaa
+  changes:
+    - type: Remove
+      message: MRE crates are no longer purchasable from cargo.
+    - type: Tweak
+      message: MRE crates are now findable on expeditions.
+  id: 459
+  time: '2026-05-24T00:08:27.0000000+00:00'
+- author: re-silvered
+  changes:
+    - type: Tweak
+      message: Snake eaten
+  id: 460
+  time: '2026-05-24T00:09:44.0000000+00:00'
+- author: IngvarJackal
+  changes:
+    - type: Add
+      message: Add suitstorage shortcut
+  id: 461
+  time: '2026-05-24T00:12:43.0000000+00:00'

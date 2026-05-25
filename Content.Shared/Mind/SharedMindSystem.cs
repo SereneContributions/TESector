@@ -653,8 +653,8 @@ public abstract partial class SharedMindSystem : EntitySystem
 
         // If the entity already speaks some language (like monkey or robot), we do nothing else.
         // Otherwise, we give them the fallback language
-        if (speaker.SpokenLanguages.Count == 0)
-            _language.AddLanguage(uid, SharedLanguageSystem.FallbackLanguagePrototype);
+        //if (speaker.SpokenLanguages.Count == 0) //Hardlight: Removed conditional logic to ensure all subject entities of MakeSentient receive the fallback: GalacticCommon
+        _language.AddLanguage(uid, SharedLanguageSystem.FallbackLanguagePrototype);
         // Starlight end
 
         EnsureComp<ExaminerComponent>(uid);
