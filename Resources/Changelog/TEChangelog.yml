@@ -1,7 +1,13 @@
 Entries:
 - author: evil-serenity
   changes:
-  - message: Added TESector's changelog!
-    type: Add
+    - message: Added TESector's changelog!
+      type: Add
   id: 1
   time: '2026-05-15T15:08:50.0000000+00:00'
+- author: evil-serenity
+  changes:
+    - type: Fix
+      message: TE Sector's chagelog tab is now correctly displayed!
+  id: 2
+  time: '2026-05-26T15:52:51.0000000+00:00'
